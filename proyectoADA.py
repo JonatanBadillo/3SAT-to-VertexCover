@@ -1,6 +1,6 @@
 import networkx as nx
-import pulp
 import matplotlib.pyplot as plt
+import itertools
 
 # Valores de las variables
 values = {1: True, 2: False, 3: False, 4: True}
@@ -41,24 +41,22 @@ for clause in formula:
         for v in unsatisfied_literals[i + 1:]:
             G.add_edge(u, v)
 
-# Crear el problema de programación lineal entera
-vertex_cover_problem = pulp.LpProblem("VertexCover", pulp.LpMinimize)
+def is_vertex_cover(graph, cover):
+    for u, v in graph.edges():
+        if u not in cover and v not in cover:
+            return False
+    return True
 
-# Crear variables binarias para cada nodo
-node_vars = {node: pulp.LpVariable(f"{node}", 0, 1, pulp.LpInteger) for node in G.nodes()}
+def find_min_vertex_cover(graph):
+    nodes = list(graph.nodes())
+    min_cover = nodes
+    for cover_size in range(1, len(nodes) + 1):
+        for cover in itertools.combinations(nodes, cover_size):
+            if is_vertex_cover(graph, cover) and len(cover) < len(min_cover):
+                min_cover = cover
+    return min_cover
 
-# Agregar la función objetivo: minimizar la suma de las variables binarias
-vertex_cover_problem += pulp.lpSum(node_vars)
-
-# Agregar restricciones: para cada arista, al menos uno de sus nodos debe estar en el Vertex Cover
-for u, v in G.edges():
-    vertex_cover_problem += node_vars[u] + node_vars[v] >= 1
-
-# Resolver el problema de programación lineal entera
-vertex_cover_problem.solve()
-
-# Obtener el Vertex Cover mínimo
-min_vertex_cover = [node for node, node_var in node_vars.items() if node_var.value() == 1]
+min_vertex_cover = find_min_vertex_cover(G)
 
 print(f"El número de vértices en el Vertex Cover mínimo es: {len(min_vertex_cover)}")
 print(f"Los vértices en el Vertex Cover mínimo son: {min_vertex_cover}")
